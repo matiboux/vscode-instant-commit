@@ -5,6 +5,8 @@
 	"version": "0.0.1",
 	"publisher": "Matiboux",
 	"repository": "https://github.com/matiboux/vscode-instant-commit",
+	"author": "Matiboux",
+	"license": "MIT",
 	"engines": {
 		"vscode": "^1.69.0"
 	},

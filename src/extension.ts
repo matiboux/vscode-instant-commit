@@ -172,7 +172,9 @@ async function _instantCommit(...resourceStates: vscode.SourceControlResourceSta
 					summary += ` from ${commonPath}`
 				}
 
-				lines.splice(0, 0, summary) // Prepend summary
+				// Prepend summary to lines
+				// Add an empty line to separate commit title from commit message
+				lines.splice(0, 0, summary, '')
 			}
 
 			return lines.join('\n')

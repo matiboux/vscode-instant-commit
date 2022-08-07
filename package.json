@@ -56,7 +56,10 @@
 		"compile": "tsc -p ./",
 		"lint": "eslint . --ext .ts,.tsx",
 		"watch": "tsc -watch -p ./",
-		"publish": "vsce publish"
+		"publish": "vsce publish",
+		"patch": "npm version patch -m \"Bump version to %%s\"",
+		"minor": "npm version minor -m \"Bump version to %%s\"",
+		"major": "npm version major -m \"Bump version to %%s\""
 	},
 	"devDependencies": {
 		"@types/node": "^18.6.3",

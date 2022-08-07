@@ -5,10 +5,10 @@ import { API, GitExtension } from './api/git'
 
 function getGitExtension(): API | undefined
 {
-	const vscodeGit = vscode.extensions.getExtension<GitExtension>("vscode.git");
-	const gitExtension = vscodeGit && vscodeGit.exports;
+	const vscodeGit = vscode.extensions.getExtension<GitExtension>("vscode.git")
+	const gitExtension = vscodeGit && vscodeGit.exports
 
-	return gitExtension && gitExtension.getAPI(1);
+	return gitExtension && gitExtension.getAPI(1)
 }
 
 async function _instantCommit(...resourceStates: vscode.SourceControlResourceState[])

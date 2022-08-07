@@ -8,12 +8,7 @@ function getGitExtension(): API | undefined
 	const vscodeGit = vscode.extensions.getExtension<GitExtension>("vscode.git")
 	const gitExtension = vscodeGit && vscodeGit.exports
 
-	return gitExtension && gitExtension.getAPI(1)
-}
-
-async function _instantCommitStates(...resourceStates: vscode.SourceControlResourceState[])
-{
-	const git = getGitExtension()
+	const git = gitExtension && gitExtension.getAPI(1)
 	if (!git)
 	{
 		vscode.window.showErrorMessage('Unable to load Git Extension.')
@@ -26,9 +21,14 @@ async function _instantCommitStates(...resourceStates: vscode.SourceControlResou
 		return
 	}
 
-	if (resourceStates.length <= 0)
+	return git
+}
+
+async function _instantCommitStates(...resourceStates: vscode.SourceControlResourceState[])
+{
+	const git = getGitExtension()
+	if (!git)
 	{
-		vscode.window.showWarningMessage('Nothing to commit.')
 		return
 	}
 

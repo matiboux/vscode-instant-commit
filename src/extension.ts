@@ -261,7 +261,7 @@ async function _instantCommitGroups(...resourceGroups: vscode.SourceControlResou
 			fileChanges.push(...stagedFiles.map(stagedFile => new FileChange(stagedFile, repository.rootUri.path)))
 			stagedFiles.splice(0, stagedFiles.length)
 		}
-		else if (resourceGroup.id === 'changed')
+		else if (resourceGroup.id === 'workingTree')
 		{
 			fileChanges.push(...changedFiles.map(changedFile => new FileChange(changedFile, repository.rootUri.path)))
 			changedFiles.splice(0, changedFiles.length)

@@ -224,6 +224,12 @@ async function _instantCommitStates(...resourceStates: vscode.SourceControlResou
 		}
 	}
 
+	if (fileChanges.length <= 0)
+	{
+		vscode.window.showErrorMessage('Please select one or more files to instant commit.')
+		return
+	}
+
 	if (stagedFiles.length > 0)
 	{
 		vscode.window.showErrorMessage('Please clean up your staged files before instant committing.')

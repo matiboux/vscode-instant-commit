@@ -239,10 +239,69 @@ async function _instantCommitStates(...resourceStates: vscode.SourceControlResou
 	instantCommit(repository, fileChanges)
 }
 
+async function _instantCommitGroups(...resourceGroups: vscode.SourceControlResourceGroup[])
+{
+	// Todo: Support multiple repositories
+	const repository = getGitRepository()
+	if (!repository)
+	{
+		return
+	}
+
+	const stagedFiles = await repository.diffIndexWithHEAD()
+	const changedFiles = await repository.diffWithHEAD()
+
+	const unknownRessourceGroupIds: string[] = []
+
+	const fileChanges: FileChange[] = []
+	for (const resourceGroup of resourceGroups)
+	{
+		if (resourceGroup.id === 'index')
+		{
+			fileChanges.push(...stagedFiles.map(stagedFile => new FileChange(stagedFile, repository.rootUri.path)))
+			stagedFiles.splice(0, stagedFiles.length)
+		}
+		else if (resourceGroup.id === 'changed')
+		{
+			fileChanges.push(...changedFiles.map(changedFile => new FileChange(changedFile, repository.rootUri.path)))
+			changedFiles.splice(0, changedFiles.length)
+		}
+		else
+		{
+			// Unknown resource group id
+			unknownRessourceGroupIds.push(resourceGroup.id)
+		}
+	}
+
+	if (fileChanges.length <= 0)
+	{
+		if (unknownRessourceGroupIds.length > 0)
+		{
+			console.log('Unknown resource group ids:', unknownRessourceGroupIds)
+			vscode.window.showErrorMessage(`Unknown resource group ids: '${unknownRessourceGroupIds.join('\', \'')}'`)
+			return
+		}
+
+		vscode.window.showErrorMessage('Nothing to instant commit.')
+		return
+	}
+
+	if (stagedFiles.length > 0)
+	{
+		vscode.window.showErrorMessage('Please clean up your staged files before instant committing.')
+		return
+	}
+
+	instantCommit(repository, fileChanges)
+}
+
 export function activate(context: vscode.ExtensionContext)
 {
 	console.log('Extension "instant-commit" is now active')
 
 	const instantCommitStates = vscode.commands.registerCommand('extension.instantCommitStates', _instantCommitStates)
 	context.subscriptions.push(instantCommitStates)
+
+	const instantCommitGroups = vscode.commands.registerCommand('extension.instantCommitGroups', _instantCommitGroups)
+	context.subscriptions.push(instantCommitGroups)
 }

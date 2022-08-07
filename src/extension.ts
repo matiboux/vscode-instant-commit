@@ -1,7 +1,7 @@
 import * as path from 'path'
 import * as vscode from 'vscode'
 
-import { API as GitAPI, Change as GitChange, GitExtension, Repository as GitRepository } from './api/git'
+import { API as GitAPI, Change as GitChange, GitExtension, Repository as GitRepository, Status as GitStatus } from './api/git'
 
 
 function getGitExtension(): GitAPI | undefined
@@ -36,22 +36,39 @@ function getGitRepository(): GitRepository | undefined
 	return git.repositories[0]
 }
 
-type ChangeLetter = 'A' | 'M' | 'R' | 'D'
+class FileChange
+{
+	path: string
+	relativePath: string
+	status: GitStatus | undefined
+	change: GitChange | undefined
 
-type FileChange =
+	constructor(change: GitChange, rootPath: string)
+	constructor(path: string, rootPath: string, status?: GitStatus)
+	constructor(change: string | GitChange, rootPath: string, status?: GitStatus)
 	{
-		path: string,
-		relativePath: string,
-		letter: ChangeLetter,
-		change: GitChange | undefined
+		if (typeof change === 'string')
+		{
+			this.path = change
+			this.status = status
+		}
+		else
+		{
+			this.path = change.uri.path
+			this.status = change.status
+			this.change = change
+		}
+
+		this.relativePath = path.relative(rootPath, this.path).replace(/\\/g, '/')
 	}
+}
 
 
 function generateMessage(fileChanges: FileChange[])
 {
 	let lines = []
 	let commonPath = fileChanges.length >= 1 ? fileChanges[0].relativePath : undefined
-	let commonLetter = fileChanges.length >= 1 ? fileChanges[0].letter : undefined
+	let commonStatus = fileChanges.length >= 1 ? fileChanges[0].status : undefined
 
 	const findLongestPathPrefix = (a: string, b: string) =>
 		{
@@ -80,15 +97,15 @@ function generateMessage(fileChanges: FileChange[])
 			return undefined
 		}
 
-	const letterToString = (letter: ChangeLetter | string | undefined) =>
+	const statusToString = (status: GitStatus | undefined) =>
 		{
-			switch (letter)
+			switch (status)
 			{
-				case "A": return "Add"
-				case "M": return "Update"
-				case "R": return "Rename"
-				case "D": return "Delete"
-				default: return "Update"
+				case GitStatus.INDEX_ADDED: return 'Add'
+				case GitStatus.INDEX_DELETED: return 'Delete'
+				case GitStatus.INDEX_RENAMED: return 'Rename'
+				case GitStatus.INDEX_COPIED: return 'Copy'
+				default: return 'Update'
 			}
 		}
 
@@ -101,17 +118,17 @@ function generateMessage(fileChanges: FileChange[])
 		}
 
 		// Update common letter
-		if (commonLetter && commonLetter !== fileChange.letter)
+		if (commonStatus && commonStatus !== fileChange.status)
 		{
-			commonLetter = undefined
+			commonStatus = undefined
 		}
 
-		lines.push(`${letterToString(fileChange.letter)} ${fileChange.relativePath}`)
+		lines.push(`${statusToString(fileChange.status)} ${fileChange.relativePath}`)
 	}
 
 	if (fileChanges.length > 1)
 	{
-		let summary = `${letterToString(commonLetter)} ${fileChanges.length} files`
+		let summary = `${statusToString(commonStatus)} ${fileChanges.length} files`
 
 		if (commonPath)
 		{
@@ -152,9 +169,6 @@ async function _instantCommitStates(...resourceStates: vscode.SourceControlResou
 	const fileChanges: FileChange[] = []
 	for (const resourceState of resourceStates)
 	{
-		const fullPath = resourceState.resourceUri.path
-		const relativePath = path.relative(repository.rootUri.path, fullPath).replace(/\\/g, '/')
-
 		const popChange = (path: string, searchStagedFiles: boolean = true) =>
 			{
 				if (searchStagedFiles)
@@ -185,13 +199,29 @@ async function _instantCommitStates(...resourceStates: vscode.SourceControlResou
 				return undefined
 			}
 
-		fileChanges.push(
-			{
-				path: fullPath,
-				relativePath: relativePath,
-				letter: (resourceState as any).letter,
-				change: popChange(fullPath, true)
-			})
+		const fullPath = resourceState.resourceUri.path
+		const change = popChange(fullPath, true)
+		if (change)
+		{
+			fileChanges.push(new FileChange(change, repository.rootUri.path))
+		}
+		else
+		{
+			const letterToStatus = (letter: string) =>
+				{
+					switch (letter)
+					{
+						case 'A': return GitStatus.INDEX_ADDED
+						case 'M': return GitStatus.INDEX_MODIFIED
+						case 'D': return GitStatus.INDEX_DELETED
+						case 'R': return GitStatus.INDEX_RENAMED
+						case 'C': return GitStatus.INDEX_COPIED
+						default: return undefined
+					}
+				}
+
+			fileChanges.push(new FileChange(fullPath, repository.rootUri.path, letterToStatus((resourceState as any).letter)))
+		}
 	}
 
 	if (stagedFiles.length > 0)

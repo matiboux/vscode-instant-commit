@@ -11,7 +11,7 @@ function getGitExtension(): API | undefined
 	return gitExtension && gitExtension.getAPI(1)
 }
 
-async function _instantCommit(...resourceStates: vscode.SourceControlResourceState[])
+async function _instantCommitStates(...resourceStates: vscode.SourceControlResourceState[])
 {
 	const git = getGitExtension()
 	if (!git)
@@ -193,6 +193,6 @@ export function activate(context: vscode.ExtensionContext)
 {
 	console.log('Extension "instant-commit" is now active')
 
-	const instantCommit = vscode.commands.registerCommand('extension.instantCommit', _instantCommit)
-	context.subscriptions.push(instantCommit)
+	const instantCommitStates = vscode.commands.registerCommand('extension.instantCommitStates', _instantCommitStates)
+	context.subscriptions.push(instantCommitStates)
 }

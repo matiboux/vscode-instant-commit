@@ -14,25 +14,25 @@
 		"SCM Providers"
 	],
 	"activationEvents": [
-		"onCommand:extension.instantCommit"
+		"onCommand:extension.instantCommitStates"
 	],
 	"contributes": {
 		"commands": [
 			{
-				"command": "extension.instantCommit",
+				"command": "extension.instantCommitStates",
 				"title": "Instant Commit"
 			}
 		],
 		"menus": {
 			"scm/resourceState/context": [
 				{
-					"command": "extension.instantCommit",
+					"command": "extension.instantCommitStates",
 					"group": "InstantCommit@1"
 				}
 			],
 			"scm/resourceFolder/context": [
 				{
-					"command": "extension.instantCommit",
+					"command": "extension.instantCommitStates",
 					"group": "InstantCommit@1"
 				}
 			]

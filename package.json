@@ -2,7 +2,7 @@
 	"name": "instant-commit",
 	"displayName": "Instant Commit",
 	"description": "Instant commit your changes with a single click, auto generating a commit message for you.",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"publisher": "Matiboux",
 	"repository": "https://github.com/matiboux/vscode-instant-commit",
 	"author": "Matiboux",

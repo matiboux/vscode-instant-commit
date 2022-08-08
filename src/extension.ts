@@ -101,11 +101,17 @@ function generateMessage(fileChanges: FileChange[])
 		{
 			switch (status)
 			{
-				case GitStatus.INDEX_ADDED: return 'Add'
-				case GitStatus.INDEX_DELETED: return 'Delete'
-				case GitStatus.INDEX_RENAMED: return 'Rename'
-				case GitStatus.INDEX_COPIED: return 'Copy'
-				default: return 'Update'
+				case GitStatus.INDEX_ADDED:
+				case GitStatus.UNTRACKED:
+					return 'Add'
+				case GitStatus.INDEX_DELETED:
+					return 'Delete'
+				case GitStatus.INDEX_RENAMED:
+					return 'Rename'
+				case GitStatus.INDEX_COPIED:
+					return 'Copy'
+				default:
+					return 'Update'
 			}
 		}
 
@@ -216,6 +222,7 @@ async function _instantCommitStates(...resourceStates: vscode.SourceControlResou
 						case 'D': return GitStatus.INDEX_DELETED
 						case 'R': return GitStatus.INDEX_RENAMED
 						case 'C': return GitStatus.INDEX_COPIED
+						case 'U': return GitStatus.UNTRACKED
 						default: return undefined
 					}
 				}

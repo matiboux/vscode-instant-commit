@@ -225,7 +225,7 @@ async function instantCommitFiles(repository: GitRepository, resourceUris: vscod
 	instantCommit(repository, fileChanges)
 }
 
-async function _instantCommitExplorer(clicked: vscode.Uri, selectedFile: vscode.Uri[])
+async function _instantCommitExplorer(focusedResourceUri: vscode.Uri, resourceUris: vscode.Uri[])
 {
 	// Todo: Support multiple repositories
 	const repository = getGitRepository()
@@ -234,7 +234,8 @@ async function _instantCommitExplorer(clicked: vscode.Uri, selectedFile: vscode.
 		return
 	}
 
-	instantCommitFiles(repository, [clicked, ...selectedFile])
+	// instantCommitFiles(repository, [focusedResourceUri, ...resourceUris])
+	instantCommitFiles(repository, resourceUris)
 }
 
 async function _instantCommitStates(...resourceStates: vscode.SourceControlResourceState[])

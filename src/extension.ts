@@ -160,20 +160,13 @@ async function instantCommit(repository: GitRepository, fileChanges: FileChange[
 	vscode.window.showInformationMessage(`Instant committed: ${commitMessage.split('\n', 1)[0]}`)
 }
 
-async function _instantCommitStates(...resourceStates: vscode.SourceControlResourceState[])
+async function instantCommitFiles(repository: GitRepository, resourceUris: vscode.Uri[])
 {
-	// Todo: Support multiple repositories
-	const repository = getGitRepository()
-	if (!repository)
-	{
-		return
-	}
-
 	const stagedFiles = await repository.diffIndexWithHEAD()
 	const changedFiles = await repository.diffWithHEAD()
 
 	const fileChanges: FileChange[] = []
-	for (const resourceState of resourceStates)
+	for (const resourceUri of resourceUris)
 	{
 		const popChange = (path: string, searchStagedFiles: boolean = true) =>
 			{
@@ -205,7 +198,7 @@ async function _instantCommitStates(...resourceStates: vscode.SourceControlResou
 				return undefined
 			}
 
-		const fullPath = resourceState.resourceUri.path
+		const fullPath = resourceUri.path
 		const change = popChange(fullPath, true)
 		if (change)
 		{
@@ -213,21 +206,7 @@ async function _instantCommitStates(...resourceStates: vscode.SourceControlResou
 		}
 		else
 		{
-			const letterToStatus = (letter: string) =>
-				{
-					switch (letter)
-					{
-						case 'A': return GitStatus.INDEX_ADDED
-						case 'M': return GitStatus.INDEX_MODIFIED
-						case 'D': return GitStatus.INDEX_DELETED
-						case 'R': return GitStatus.INDEX_RENAMED
-						case 'C': return GitStatus.INDEX_COPIED
-						case 'U': return GitStatus.UNTRACKED
-						default: return undefined
-					}
-				}
-
-			fileChanges.push(new FileChange(fullPath, repository.rootUri.path, letterToStatus((resourceState as any).letter)))
+			fileChanges.push(new FileChange(fullPath, repository.rootUri.path))
 		}
 	}
 
@@ -244,6 +223,18 @@ async function _instantCommitStates(...resourceStates: vscode.SourceControlResou
 	}
 
 	instantCommit(repository, fileChanges)
+}
+
+async function _instantCommitStates(...resourceStates: vscode.SourceControlResourceState[])
+{
+	// Todo: Support multiple repositories
+	const repository = getGitRepository()
+	if (!repository)
+	{
+		return
+	}
+
+	instantCommitFiles(repository, resourceStates.map(resourceState => resourceState.resourceUri))
 }
 
 async function _instantCommitGroups(...resourceGroups: vscode.SourceControlResourceGroup[])

@@ -14,11 +14,16 @@
 		"SCM Providers"
 	],
 	"activationEvents": [
+		"onCommand:extension.instantCommitExplorer",
 		"onCommand:extension.instantCommitStates",
 		"onCommand:extension.instantCommitGroups"
 	],
 	"contributes": {
 		"commands": [
+			{
+				"command": "extension.instantCommitExplorer",
+				"title": "Instant Commit"
+			},
 			{
 				"command": "extension.instantCommitStates",
 				"title": "Instant Commit"
@@ -29,6 +34,12 @@
 			}
 		],
 		"menus": {
+			"explorer/context": [
+				{
+					"command": "extension.instantCommitExplorer",
+					"group": "InstantCommit@1"
+				}
+			],
 			"scm/resourceState/context": [
 				{
 					"command": "extension.instantCommitStates",

@@ -225,6 +225,18 @@ async function instantCommitFiles(repository: GitRepository, resourceUris: vscod
 	instantCommit(repository, fileChanges)
 }
 
+async function _instantCommitExplorer(clicked: vscode.Uri, selectedFile: vscode.Uri[])
+{
+	// Todo: Support multiple repositories
+	const repository = getGitRepository()
+	if (!repository)
+	{
+		return
+	}
+
+	instantCommitFiles(repository, [clicked, ...selectedFile])
+}
+
 async function _instantCommitStates(...resourceStates: vscode.SourceControlResourceState[])
 {
 	// Todo: Support multiple repositories
@@ -296,6 +308,9 @@ async function _instantCommitGroups(...resourceGroups: vscode.SourceControlResou
 export function activate(context: vscode.ExtensionContext)
 {
 	console.log('Extension "instant-commit" is now active')
+
+	const instantCommitExplorer = vscode.commands.registerCommand('extension.instantCommitExplorer', _instantCommitExplorer)
+	context.subscriptions.push(instantCommitExplorer)
 
 	const instantCommitStates = vscode.commands.registerCommand('extension.instantCommitStates', _instantCommitStates)
 	context.subscriptions.push(instantCommitStates)

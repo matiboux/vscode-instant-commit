@@ -105,6 +105,7 @@ function generateMessage(fileChanges: FileChange[])
 				case GitStatus.UNTRACKED:
 					return 'Add'
 				case GitStatus.INDEX_DELETED:
+				case GitStatus.DELETED:
 					return 'Delete'
 				case GitStatus.INDEX_RENAMED:
 					return 'Rename'

@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 
 import { API as GitAPI, Change as GitChange, GitExtension, Repository as GitRepository, Status as GitStatus } from './api/git'
 
+type GitSource = 'index' | 'workingTree'
 
 function getGitExtension(): GitAPI | undefined
 {
@@ -36,6 +37,55 @@ function getGitRepository(): GitRepository | undefined
 	return git.repositories[0]
 }
 
+function getGitSourceFromStatus(status: GitStatus): GitSource
+{
+	switch (status)
+	{
+		case GitStatus.INDEX_MODIFIED:
+		case GitStatus.INDEX_ADDED:
+		case GitStatus.INDEX_DELETED:
+		case GitStatus.INDEX_RENAMED:
+		case GitStatus.INDEX_COPIED:
+			return 'index'
+	}
+
+	return 'workingTree'
+}
+
+function ensureGitStatusSource(status: GitStatus, toSource: GitSource)
+{
+	if (toSource === 'index')
+	{
+		switch (status)
+		{
+			case GitStatus.MODIFIED:
+				return GitStatus.INDEX_MODIFIED
+			case GitStatus.UNTRACKED:
+				return GitStatus.INDEX_ADDED
+			case GitStatus.DELETED:
+				return GitStatus.INDEX_DELETED
+		}
+	}
+	else if (toSource === 'workingTree')
+	{
+		switch (status)
+		{
+			case GitStatus.INDEX_MODIFIED:
+				return GitStatus.MODIFIED
+			case GitStatus.INDEX_ADDED:
+				return GitStatus.UNTRACKED
+			case GitStatus.INDEX_DELETED:
+				return GitStatus.DELETED
+			case GitStatus.INDEX_RENAMED:
+				return GitStatus.MODIFIED
+			case GitStatus.INDEX_COPIED:
+				return GitStatus.MODIFIED
+		}
+	}
+
+	return status
+}
+
 class FileChange
 {
 	path: string
@@ -43,19 +93,22 @@ class FileChange
 	status: GitStatus | undefined
 	change: GitChange | undefined
 
-	constructor(change: GitChange, rootPath: string)
+	constructor(change: GitChange, rootPath: string, source: GitSource)
 	constructor(path: string, rootPath: string, status?: GitStatus)
-	constructor(change: string | GitChange, rootPath: string, status?: GitStatus)
+	constructor(change: string | GitChange, rootPath: string, status?: GitStatus | GitSource)
 	{
 		if (typeof change === 'string')
 		{
 			this.path = change
-			this.status = status
+			this.status = typeof status === 'number' ? status : undefined
 		}
 		else
 		{
 			this.path = change.uri.path
-			this.status = change.status
+			this.status =
+				typeof status === 'string'
+					? ensureGitStatusSource(change.status, status)
+					: change.status
 			this.change = change
 		}
 
@@ -173,13 +226,13 @@ async function instantCommitFiles(repository: GitRepository, resourceUris: vscod
 	const stagedFiles = await repository.diffIndexWithHEAD()
 	const changedFiles = await repository.diffWithHEAD()
 
-	console.log('Staged files:', stagedFiles)
-	console.log('Changed files:', changedFiles)
+	console.log(`Staged files (${stagedFiles.length}):`, stagedFiles)
+	console.log(`Changed files (${changedFiles.length}):`, changedFiles)
 
 	const fileChanges: FileChange[] = []
 	for (const resourceUri of resourceUris)
 	{
-		const popChange = (path: string, searchStagedFiles: boolean = true) =>
+		const popChange = (path: string, searchStagedFiles: boolean = true): [GitChange, GitSource] | undefined =>
 			{
 				if (searchStagedFiles)
 				{
@@ -190,7 +243,7 @@ async function instantCommitFiles(repository: GitRepository, resourceUris: vscod
 						if (stagedFile.uri.path === path)
 						{
 							stagedFiles.splice(i, 1) // Remove from staged files
-							return stagedFile
+							return [stagedFile, 'index']
 						}
 					}
 				}
@@ -202,7 +255,7 @@ async function instantCommitFiles(repository: GitRepository, resourceUris: vscod
 					if (changedFile.uri.path === path)
 					{
 						changedFiles.splice(i, 1) // Remove from staged files
-						return changedFile
+						return [changedFile, 'workingTree']
 					}
 				}
 
@@ -214,7 +267,7 @@ async function instantCommitFiles(repository: GitRepository, resourceUris: vscod
 		console.log(`Found change for ${fullPath}`, change)
 		if (change)
 		{
-			fileChanges.push(new FileChange(change, repository.rootUri.path))
+			fileChanges.push(new FileChange(change[0], repository.rootUri.path, change[1]))
 		}
 		else
 		{
@@ -274,8 +327,8 @@ async function _instantCommitGroups(...resourceGroups: vscode.SourceControlResou
 	const stagedFiles = await repository.diffIndexWithHEAD()
 	const changedFiles = await repository.diffWithHEAD()
 
-	console.log('Staged files:', stagedFiles)
-	console.log('Changed files:', changedFiles)
+	console.log(`Staged files (${stagedFiles.length}):`, stagedFiles)
+	console.log(`Changed files (${changedFiles.length}):`, changedFiles)
 
 	const unknownRessourceGroupIds: string[] = []
 
@@ -284,12 +337,12 @@ async function _instantCommitGroups(...resourceGroups: vscode.SourceControlResou
 	{
 		if (resourceGroup.id === 'index')
 		{
-			fileChanges.push(...stagedFiles.map(stagedFile => new FileChange(stagedFile, repository.rootUri.path)))
+			fileChanges.push(...stagedFiles.map(stagedFile => new FileChange(stagedFile, repository.rootUri.path, 'index')))
 			stagedFiles.splice(0, stagedFiles.length)
 		}
 		else if (resourceGroup.id === 'workingTree')
 		{
-			fileChanges.push(...changedFiles.map(changedFile => new FileChange(changedFile, repository.rootUri.path)))
+			fileChanges.push(...changedFiles.map(changedFile => new FileChange(changedFile, repository.rootUri.path, 'workingTree')))
 			changedFiles.splice(0, changedFiles.length)
 		}
 		else

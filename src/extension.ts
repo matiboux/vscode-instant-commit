@@ -157,11 +157,12 @@ async function instantCommit(repository: GitRepository, fileChanges: FileChange[
 	const commitMessage = generateMessage(fileChanges)
 	console.log(`New message:\n${commitMessage}`)
 
-	await repository.add(
+	const fileChangesPaths =
 		fileChanges
 			.filter(fileChange => fileChange.status !== GitStatus.INDEX_DELETED)
 			.map(fileChange => fileChange.path)
-		)
+
+	await repository.add(fileChangesPaths)
 	await repository.commit(commitMessage)
 
 	vscode.window.showInformationMessage(`Instant committed: ${commitMessage.split('\n', 1)[0]}`)

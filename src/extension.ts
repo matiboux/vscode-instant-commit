@@ -205,8 +205,10 @@ async function instantCommitFiles(repository: GitRepository, resourceUris: vscod
 		{
 			fileChanges.push(new FileChange(change, repository.rootUri.path))
 		}
-
-		// If a selected file has no changes, ignore it
+		else
+		{
+			fileChanges.push(new FileChange(fullPath, repository.rootUri.path))
+		}
 	}
 
 	if (fileChanges.length <= 0)
@@ -268,7 +270,6 @@ async function _instantCommitGroups(...resourceGroups: vscode.SourceControlResou
 	{
 		if (resourceGroup.id === 'index')
 		{
-			console.log(stagedFiles)
 			fileChanges.push(...stagedFiles.map(stagedFile => new FileChange(stagedFile, repository.rootUri.path)))
 			stagedFiles.splice(0, stagedFiles.length)
 		}

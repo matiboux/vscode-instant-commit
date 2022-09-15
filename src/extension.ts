@@ -116,7 +116,6 @@ class FileChange
 	}
 }
 
-
 function generateMessage(fileChanges: FileChange[])
 {
 	let lines = []
@@ -203,12 +202,18 @@ function generateMessage(fileChanges: FileChange[])
 	return lines.join('\n')
 }
 
+async function generateMessageStaged(repository: GitRepository)
+{
+	const fileChanges =
+		(await repository.diffIndexWithHEAD())
+			.map(change => new FileChange(change, repository.rootUri.path, 'index'))
+
+	return generateMessage(fileChanges)
+}
+
 async function instantCommit(repository: GitRepository, fileChanges: FileChange[])
 {
 	console.log('File changes to commit:', fileChanges)
-
-	const commitMessage = generateMessage(fileChanges)
-	console.log(`New message:\n${commitMessage}`)
 
 	const fileChangesPaths =
 		fileChanges
@@ -219,6 +224,9 @@ async function instantCommit(repository: GitRepository, fileChanges: FileChange[
 	{
 		await repository.add(fileChangesPaths)
 	}
+
+	const commitMessage = await generateMessageStaged(repository)
+	console.log(`New message:\n${commitMessage}`)
 
 	await repository.commit(commitMessage)
 

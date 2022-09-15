@@ -152,6 +152,8 @@ function generateMessage(fileChanges: FileChange[])
 
 async function instantCommit(repository: GitRepository, fileChanges: FileChange[])
 {
+	console.log('File changes to commit:', fileChanges)
+
 	const commitMessage = generateMessage(fileChanges)
 	console.log(`New message:\n${commitMessage}`)
 
@@ -165,6 +167,9 @@ async function instantCommitFiles(repository: GitRepository, resourceUris: vscod
 {
 	const stagedFiles = await repository.diffIndexWithHEAD()
 	const changedFiles = await repository.diffWithHEAD()
+
+	console.log('Staged files:', stagedFiles)
+	console.log('Changed files:', changedFiles)
 
 	const fileChanges: FileChange[] = []
 	for (const resourceUri of resourceUris)
@@ -201,6 +206,7 @@ async function instantCommitFiles(repository: GitRepository, resourceUris: vscod
 
 		const fullPath = resourceUri.path
 		const change = popChange(fullPath, true)
+		console.log(`Found change for ${fullPath}`, change)
 		if (change)
 		{
 			fileChanges.push(new FileChange(change, repository.rootUri.path))
@@ -262,6 +268,9 @@ async function _instantCommitGroups(...resourceGroups: vscode.SourceControlResou
 
 	const stagedFiles = await repository.diffIndexWithHEAD()
 	const changedFiles = await repository.diffWithHEAD()
+
+	console.log('Staged files:', stagedFiles)
+	console.log('Changed files:', changedFiles)
 
 	const unknownRessourceGroupIds: string[] = []
 

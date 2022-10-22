@@ -20,7 +20,7 @@ function getGitExtension(): GitAPI | undefined
 	return git
 }
 
-function getGitRepository(): GitRepository | undefined
+function getGitRepository(resourceUri?: vscode.Uri): GitRepository | undefined
 {
 	const git = getGitExtension()
 	if (!git)
@@ -34,7 +34,13 @@ function getGitRepository(): GitRepository | undefined
 		return
 	}
 
-	return git.repositories[0]
+	if (!resourceUri)
+	{
+		return git.repositories[0]
+	}
+
+	return git.repositories.find(repository =>
+		resourceUri.fsPath.startsWith(repository.rootUri.fsPath))
 }
 
 function getGitSourceFromStatus(status: GitStatus): GitSource
@@ -305,7 +311,7 @@ async function instantCommitFiles(repository: GitRepository, resourceUris: vscod
 async function _instantCommitExplorer(focusedResourceUri: vscode.Uri, resourceUris: vscode.Uri[])
 {
 	// Todo: Support multiple repositories
-	const repository = getGitRepository()
+	const repository = getGitRepository(resourceUris[0])
 	if (!repository)
 	{
 		return
@@ -318,7 +324,7 @@ async function _instantCommitExplorer(focusedResourceUri: vscode.Uri, resourceUr
 async function _instantCommitStates(...resourceStates: vscode.SourceControlResourceState[])
 {
 	// Todo: Support multiple repositories
-	const repository = getGitRepository()
+	const repository = getGitRepository(resourceStates[0]?.resourceUri)
 	if (!repository)
 	{
 		return
@@ -330,7 +336,7 @@ async function _instantCommitStates(...resourceStates: vscode.SourceControlResou
 async function _instantCommitGroups(...resourceGroups: vscode.SourceControlResourceGroup[])
 {
 	// Todo: Support multiple repositories
-	const repository = getGitRepository()
+	const repository = getGitRepository(resourceGroups[0]?.resourceStates[0]?.resourceUri)
 	if (!repository)
 	{
 		return
